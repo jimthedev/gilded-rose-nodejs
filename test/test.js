@@ -17,162 +17,179 @@ describe('Gilded Rose', function () {
     inn = new Inn();
   });
 
-  it('should_not_change_quality_nor_sellIn_for_sulfuras', function () {
-    // when
-    inn.updateQuality();
-
-    // then
-    expect(sulfuras().quality).to.equal(80);
-    expect(sulfuras().sellIn).to.equal(0);
-
-    // once again
-    makeALongTimePass();
-
-    // then
-    expect(sulfuras().quality).to.equal(80);
-    expect(sulfuras().sellIn).to.equal(0);
-  });
-
-  it('should_decrease_sellIn_for_all_products_but_sulfuras', function () {
-    // when
-    inn.updateQuality();
-
-    // then
-    expect(dexterityVest().sellIn).to.equal(9);
-    expect(brie().sellIn).to.equal(1);
-    expect(mangooseElixir().sellIn).to.equal(4);
-    expect(backstagePasses().sellIn).to.equal(14);
-    expect(conjuredManaCake().sellIn).to.equal(2);
-
-    // once again
-    inn.updateQuality();
-
-    // then
-    expect(dexterityVest().sellIn).to.equal(8);
-    expect(brie().sellIn).to.equal(0);
-    expect(mangooseElixir().sellIn).to.equal(3);
-    expect(backstagePasses().sellIn).to.equal(13);
-    expect(conjuredManaCake().sellIn).to.equal(1);
-  });
-
-  it('should_decrease_quality_for_general_products', function () {
-    // when
-    inn.updateQuality();
-
-    // then
-    expect(dexterityVest().quality).to.equal(19);
-    expect(mangooseElixir().quality).to.equal(6);
-
-    // once again
-    inn.updateQuality();
-
-    // then
-    expect(dexterityVest().quality).to.equal(18);
-    expect(mangooseElixir().quality).to.equal(5);
-  });
-
-  it('should_increase_quality_for_brie_and_backstage_pass', function () {
-    // when
-    inn.updateQuality();
-
-    // then
-    expect(brie().quality).to.equal(1);
-    expect(backstagePasses().quality).to.equal(21);
-  });
-
-  it('should_decrease_quality_twice_for_general_products_when_sell_by_date_has_passed', function () {
-    [DEXTERITY_VEST_IDX, MANGOOSE_ELIXIR_IDX, CONJURED_MANA_CAKE_IDX].forEach(function (itemIdx) {
-      // given
-      var item = inn.items[itemIdx];
-
-      moveToLastDayBeforeSellByDate(item);
-
-      var qualityBeforeUpdate = item.quality;
-
-      // when
+  describe('Dexterity Vest', function() {
+    it('should decrease sellIn', function() {
       inn.updateQuality();
-
-      // then
-      var expectedQuantities = [qualityBeforeUpdate - 2, 0];
-
-      expect(item.quality).to.satisfy(function (q) {
-        return expectedQuantities.indexOf(q) !== -1;
-      }, 'quality of ' + item.name + ' was expected to be one of ' + expectedQuantities) + ' but was ' + item.quality;
-    });
-  });
-
-  it('should_never_set_quality_below_0', function () {
-    makeALongTimePass();
-
-    inn.items.forEach(function (item) {
+      expect(dexterityVest().sellIn).to.equal(9);
+      inn.updateQuality();
+      expect(dexterityVest().sellIn).to.equal(8);
+    })
+    it('should decrease quality', function() {
+      inn.updateQuality();
+      expect(dexterityVest().quality).to.equal(19);
+      inn.updateQuality();
+      expect(dexterityVest().quality).to.equal(18);
+    })
+    it('should decrease quality twice after sellIn reaches 0', function() {
+      item = dexterityVest();
+      moveToLastDayBeforeSellByDate(item);
+      inn.updateQuality();
+      expect(item.quality).to.equal(8);
+    })
+    it('should never have a quality less than 0', function() {
+      makeALongTimePass();
       expect(item.quality).to.be.at.least(0);
-    });
-  });
+    })
+  })
 
-  it('should_never_set_quality_above_50_except_for_sulfuras', function () {
-    makeALongTimePass();
+  describe('Aged Brie', function() {
+    it('should decrease sellIn', function() {
+      inn.updateQuality();
+      expect(brie().sellIn).to.equal(1);
+      inn.updateQuality();
+      expect(brie().sellIn).to.equal(0);
+    })
+    it('should increase quality', function() {
+      inn.updateQuality();
+      expect(brie().quality).to.equal(1);
+      inn.updateQuality();
+      expect(brie().quality).to.equal(2);
+    })
+    it('should increase quality twice after sellIn reaches 0', function() {
+      item = brie();
+      moveToLastDayBeforeSellByDate(item);
+      inn.updateQuality();
+      expect(item.quality).to.equal(4);
+    })
+    it('should never have a quality greater than 50', function() {
+      makeALongTimePass();
+      expect(item.quality).to.be.at.most(50);
+    })
+  })
 
-    inn.items.forEach(function (item) {
-      if (item !== sulfuras()) {
-        expect(item.quality).to.be.at.most(50);
-      }
-    });
-  });
+  describe('Elixir', function() {
+    it('should decrease sellIn', function() {
+      inn.updateQuality();
+      expect(mangooseElixir().sellIn).to.equal(4);
+      inn.updateQuality();
+      expect(mangooseElixir().sellIn).to.equal(3);
+    })
+    it('should decrease quality', function() {
+      inn.updateQuality();
+      expect(mangooseElixir().quality).to.equal(6);
+      inn.updateQuality();
+      expect(mangooseElixir().quality).to.equal(5);
+    })
+    it('should decrease quality twice after sellIn reaches 0', function() {
+      item = mangooseElixir();
+      moveToLastDayBeforeSellByDate(item);
+      inn.updateQuality();
+      expect(item.quality).to.equal(0);
+    })
+    it('should never have a quality less than 0', function() {
+      makeALongTimePass();
+      expect(item.quality).to.be.at.least(0);
+    })
+  })
 
-  it('should_increase_brie_quality_by_2_when_sell_by_date_is_passed', function () {
-    // given
-    moveToLastDayBeforeSellByDate(brie());
+  describe('Sulfuras', function() {
+    it('should never change sellIn', function() {
+      inn.updateQuality();
+      expect(sulfuras().sellIn).to.equal(0);
+      inn.updateQuality();
+      expect(sulfuras().sellIn).to.equal(0);
+    })
+    it('should never change quality', function() {
+      inn.updateQuality();
+      expect(sulfuras().quality).to.equal(80);
+      inn.updateQuality();
+      expect(sulfuras().quality).to.equal(80);
+    })
+  })
 
-    var qualityBeforeUpdate = brie().quality;
+  describe('Backstage Passes', function() {
+    it('should decrease sellIn', function() {
+      inn.updateQuality();
+      expect(backstagePasses().sellIn).to.equal(14);
+      inn.updateQuality();
+      expect(backstagePasses().sellIn).to.equal(13);
+    })
+    it('should increase quality', function() {
+      inn.updateQuality();
+      expect(backstagePasses().quality).to.equal(21);
+      inn.updateQuality();
+      expect(backstagePasses().quality).to.equal(22);
+    })
+    it('should increase quality twice after sellIn reaches 10', function() {
+      item = backstagePasses();
+      moveToNthDayBeforeSellByDate(item, 11);
+      inn.updateQuality();
+      expect(item.quality).to.equal(27);
+    })
+    it('should increase quality thrice after sellIn reaches 5', function() {
+      item = backstagePasses();
+      moveToNthDayBeforeSellByDate(item, 6);
+      inn.updateQuality();
+      expect(item.quality).to.equal(38);
+    })
+    it('should lose all quality when sellIn reaches -1', function() {
+      item = backstagePasses();
+      moveToLastDayBeforeSellByDate(item);
+      inn.updateQuality();
+      expect(item.quality).to.equal(0);
+    })
+    it('should never have a quality greater than 50', function() {
+      makeALongTimePass();
+      expect(item.quality).to.be.at.most(0);
+    })
+  })
 
-    // when
-    inn.updateQuality();
+  describe.skip('Conjured Mana Cake', function() {
+    it('should decrease sellIn', function() {
+      inn.updateQuality();
+      expect(conjuredManaCake().sellIn).to.equal(2);
+      inn.updateQuality();
+      expect(conjuredManaCake().sellIn).to.equal(1);
+    })
+    it('should decrease quality twice as fast', function() {
+      inn.updateQuality();
+      expect(conjuredManaCake().quality).to.equal(4);
+      inn.updateQuality();
+      expect(conjuredManaCake().quality).to.equal(2);
+    })
+    it('should decrease quality twice after sellIn reaches 0', function() {
+      item = conjuredManaCake();
+      moveToLastDayBeforeSellByDate(item);
+      inn.updateQuality();
+      expect(item.quality).to.equal(0);
+    })
+    it('should never have a quality less than 0', function() {
+      makeALongTimePass();
+      expect(item.quality).to.be.at.least(0);
+    })
+  })
 
-    // then
-    expect(brie().quality).to.equal(qualityBeforeUpdate + 2);
-  });
+  describe.skip('Conjured Muffin', function() {
+    it('should decrease sellIn', function() {
+      inn.updateQuality();
+      expect(conjuredMuffin().sellIn).to.equal(0);
+    })
+    it('should decrease quality twice as fast', function() {
+      inn.updateQuality();
+      expect(conjuredMuffin().quality).to.equal(3);
+    })
+    it('should decrease quality twice after sellIn reaches 0', function() {
+      item = conjuredMuffin();
+      moveToLastDayBeforeSellByDate(item);
+      inn.updateQuality();
+      expect(item.quality).to.equal(0);
+    })
+    it('should never have a quality less than 0', function() {
+      makeALongTimePass();
+      expect(item.quality).to.be.at.least(0);
+    })
+  })
 
-  it('should_increase_backstage_passes_quality_by_2_when_concert_is_in_10_days_or_less', function () {
-    // given
-    moveToNthDayBeforeSellByDate(backstagePasses(), 10);
-
-    var qualityBeforeUpdate = backstagePasses().quality;
-
-    // when
-    inn.updateQuality();
-
-    // then
-    expect(backstagePasses().quality).to.equal(qualityBeforeUpdate + 2);
-  });
-
-  it('should_increase_backstage_passes_quality_by_3_when_concert_is_in_5_days_or_less', function () {
-    // given
-    moveToNthDayBeforeSellByDate(backstagePasses(), 5);
-
-    var qualityBeforeUpdate = backstagePasses().quality;
-
-    // when
-    inn.updateQuality();
-
-    // then
-    expect(backstagePasses().quality).to.equal(qualityBeforeUpdate + 3);
-  });
-
-  it.skip('should_decrease_quality_twice_as_fast_for_conjured_items', function () {
-    // when
-    inn.updateQuality();
-
-    // then
-    expect(conjuredManaCake().quality).to.equal(4);
-    expect(conjuredMuffin().quality).to.equal(3);
-
-    // once again
-    inn.updateQuality();
-
-    // then
-    expect(conjuredManaCake().quality).to.equal(2);
-    expect(conjuredMuffin().quality).to.equal(1);
-  });
 
   function makeALongTimePass() {
     for (var i = 0; i < 200; i++) {
